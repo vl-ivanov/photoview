@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/joho/godotenv"
+	"github.com/photoview/photoview/api/scanner/media_encoding/executable_worker"
 	"github.com/photoview/photoview/api/utils"
 	"gorm.io/gorm"
 )
@@ -49,6 +50,9 @@ func IntegrationTestRun(m *testing.M) int {
 	faceModelsPath := path.Join(path.Dir(file), "..", "data", "models")
 	utils.ConfigureTestFaceRecognitionModelsPath(faceModelsPath)
 
+	terminateWorkers := executable_worker.Initialize()
+	defer terminateWorkers()
+
 	result := m.Run()
 
 	test_dbm.Close()
@@ -68,7 +72,7 @@ func DatabaseTest(t *testing.T) *gorm.DB {
 		t.Skip("Database integration tests disabled")
 	}
 
-	if err := test_dbm.SetupOrReset(); err != nil {
+	if err := test_dbm.SetupAndReset(); err != nil {
 		t.Fatalf("failed to setup or reset test database: %v", err)
 	}
 

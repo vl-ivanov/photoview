@@ -18,7 +18,7 @@ env:
   DOCKER_USERNAME: viktorstrate
   DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
   DOCKER_IMAGE: ${{ github.repository }}
-  PLATFORMS: linux/amd64,linux/arm64,linux/arm/v7
+  PLATFORMS: linux/amd64,linux/arm64
 
 jobs:
   prepare:
@@ -80,7 +80,12 @@ jobs:
           ref: ${{ matrix.tags.ref }}
 
       - name: Fetch branches
-        run: git fetch --all
+        id: git
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --all
+          echo "COMMIT_SHORT_SHA=$(git rev-parse --short HEAD)" | tee -a $GITHUB_OUTPUT
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -121,6 +126,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context:     .
+          #target:      release # Uncomment before releasing the new version, as the 2.4.0 doesn't have this target.
           sbom:        true
           provenance:  mode=max
           platforms:   ${{ env.PLATFORMS }}
@@ -129,12 +135,16 @@ jobs:
           tags:        ${{ steps.docker_meta.outputs.tags }}
           labels:      ${{ steps.docker_meta.outputs.labels }}
           annotations: ${{ steps.docker_meta.outputs.annotations }}
-          cache-from:  type=gha
-          cache-to:    type=gha,mode=max
+          cache-from: |
+            type=gha,scope=ui-${{ hashFiles('ui/package-lock.json') }}
+            type=gha,scope=test-api-${{ hashFiles('api/go.sum', 'scripts/install_*.sh', 'dependencies/*') }}
+          cache-to: |
+            type=gha,mode=max,scope=ui-${{ hashFiles('ui/package-lock.json') }}
+            type=gha,mode=max,scope=test-api-${{ hashFiles('api/go.sum', 'scripts/install_*.sh', 'dependencies/*') }}
           build-args: |
             NODE_ENV=production
             VERSION=${{ github.ref_name }}
-            COMMIT_SHA=${{ github.sha }}
+            COMMIT_SHA=${{ steps.git.outputs.COMMIT_SHORT_SHA }}
 
   dockle:
     name: Dockle Container Analysis

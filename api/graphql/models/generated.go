@@ -3,6 +3,7 @@
 package models
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"strconv"
@@ -111,21 +112,22 @@ type TimelineGroup struct {
 type LanguageTranslation string
 
 const (
-	LanguageTranslationEnglish            LanguageTranslation = "English"
-	LanguageTranslationFrench             LanguageTranslation = "French"
-	LanguageTranslationItalian            LanguageTranslation = "Italian"
-	LanguageTranslationSwedish            LanguageTranslation = "Swedish"
-	LanguageTranslationDanish             LanguageTranslation = "Danish"
-	LanguageTranslationSpanish            LanguageTranslation = "Spanish"
-	LanguageTranslationPolish             LanguageTranslation = "Polish"
-	LanguageTranslationUkrainian          LanguageTranslation = "Ukrainian"
-	LanguageTranslationGerman             LanguageTranslation = "German"
-	LanguageTranslationRussian            LanguageTranslation = "Russian"
-	LanguageTranslationTraditionalChinese LanguageTranslation = "TraditionalChinese"
-	LanguageTranslationSimplifiedChinese  LanguageTranslation = "SimplifiedChinese"
-	LanguageTranslationPortuguese         LanguageTranslation = "Portuguese"
-	LanguageTranslationBasque             LanguageTranslation = "Basque"
-	LanguageTranslationTurkish            LanguageTranslation = "Turkish"
+	LanguageTranslationEnglish              LanguageTranslation = "English"
+	LanguageTranslationFrench               LanguageTranslation = "French"
+	LanguageTranslationItalian              LanguageTranslation = "Italian"
+	LanguageTranslationSwedish              LanguageTranslation = "Swedish"
+	LanguageTranslationDanish               LanguageTranslation = "Danish"
+	LanguageTranslationSpanish              LanguageTranslation = "Spanish"
+	LanguageTranslationPolish               LanguageTranslation = "Polish"
+	LanguageTranslationUkrainian            LanguageTranslation = "Ukrainian"
+	LanguageTranslationGerman               LanguageTranslation = "German"
+	LanguageTranslationRussian              LanguageTranslation = "Russian"
+	LanguageTranslationTraditionalChineseTw LanguageTranslation = "TraditionalChineseTW"
+	LanguageTranslationTraditionalChineseHk LanguageTranslation = "TraditionalChineseHK"
+	LanguageTranslationSimplifiedChinese    LanguageTranslation = "SimplifiedChinese"
+	LanguageTranslationPortuguese           LanguageTranslation = "Portuguese"
+	LanguageTranslationBasque               LanguageTranslation = "Basque"
+	LanguageTranslationTurkish              LanguageTranslation = "Turkish"
 )
 
 var AllLanguageTranslation = []LanguageTranslation{
@@ -139,7 +141,8 @@ var AllLanguageTranslation = []LanguageTranslation{
 	LanguageTranslationUkrainian,
 	LanguageTranslationGerman,
 	LanguageTranslationRussian,
-	LanguageTranslationTraditionalChinese,
+	LanguageTranslationTraditionalChineseTw,
+	LanguageTranslationTraditionalChineseHk,
 	LanguageTranslationSimplifiedChinese,
 	LanguageTranslationPortuguese,
 	LanguageTranslationBasque,
@@ -148,7 +151,7 @@ var AllLanguageTranslation = []LanguageTranslation{
 
 func (e LanguageTranslation) IsValid() bool {
 	switch e {
-	case LanguageTranslationEnglish, LanguageTranslationFrench, LanguageTranslationItalian, LanguageTranslationSwedish, LanguageTranslationDanish, LanguageTranslationSpanish, LanguageTranslationPolish, LanguageTranslationUkrainian, LanguageTranslationGerman, LanguageTranslationRussian, LanguageTranslationTraditionalChinese, LanguageTranslationSimplifiedChinese, LanguageTranslationPortuguese, LanguageTranslationBasque, LanguageTranslationTurkish:
+	case LanguageTranslationEnglish, LanguageTranslationFrench, LanguageTranslationItalian, LanguageTranslationSwedish, LanguageTranslationDanish, LanguageTranslationSpanish, LanguageTranslationPolish, LanguageTranslationUkrainian, LanguageTranslationGerman, LanguageTranslationRussian, LanguageTranslationTraditionalChineseTw, LanguageTranslationTraditionalChineseHk, LanguageTranslationSimplifiedChinese, LanguageTranslationPortuguese, LanguageTranslationBasque, LanguageTranslationTurkish:
 		return true
 	}
 	return false
@@ -173,6 +176,20 @@ func (e *LanguageTranslation) UnmarshalGQL(v any) error {
 
 func (e LanguageTranslation) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *LanguageTranslation) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e LanguageTranslation) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 // Specified the type a particular notification is of
@@ -222,6 +239,20 @@ func (e NotificationType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+func (e *NotificationType) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e NotificationType) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
 // Used to specify which order to sort items in
 type OrderDirection string
 
@@ -266,52 +297,16 @@ func (e OrderDirection) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-// Supported downsampling filters for thumbnail generation
-type ThumbnailFilter string
-
-const (
-	ThumbnailFilterNearestNeighbor   ThumbnailFilter = "NearestNeighbor"
-	ThumbnailFilterBox               ThumbnailFilter = "Box"
-	ThumbnailFilterLinear            ThumbnailFilter = "Linear"
-	ThumbnailFilterMitchellNetravali ThumbnailFilter = "MitchellNetravali"
-	ThumbnailFilterCatmullRom        ThumbnailFilter = "CatmullRom"
-	ThumbnailFilterLanczos           ThumbnailFilter = "Lanczos"
-)
-
-var AllThumbnailFilter = []ThumbnailFilter{
-	ThumbnailFilterNearestNeighbor,
-	ThumbnailFilterBox,
-	ThumbnailFilterLinear,
-	ThumbnailFilterMitchellNetravali,
-	ThumbnailFilterCatmullRom,
-	ThumbnailFilterLanczos,
-}
-
-func (e ThumbnailFilter) IsValid() bool {
-	switch e {
-	case ThumbnailFilterNearestNeighbor, ThumbnailFilterBox, ThumbnailFilterLinear, ThumbnailFilterMitchellNetravali, ThumbnailFilterCatmullRom, ThumbnailFilterLanczos:
-		return true
+func (e *OrderDirection) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
 	}
-	return false
+	return e.UnmarshalGQL(s)
 }
 
-func (e ThumbnailFilter) String() string {
-	return string(e)
-}
-
-func (e *ThumbnailFilter) UnmarshalGQL(v any) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = ThumbnailFilter(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid ThumbnailFilter", str)
-	}
-	return nil
-}
-
-func (e ThumbnailFilter) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
+func (e OrderDirection) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }

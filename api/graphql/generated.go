@@ -153,31 +153,30 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AuthorizeUser                func(childComplexity int, username string, password string) int
-		ChangeUserPreferences        func(childComplexity int, language *string) int
-		CombineFaceGroups            func(childComplexity int, destinationFaceGroupID int, sourceFaceGroupID int) int
-		CreateUser                   func(childComplexity int, username string, password *string, admin bool) int
-		DeleteShareToken             func(childComplexity int, token string) int
-		DeleteUser                   func(childComplexity int, id int) int
-		DetachImageFaces             func(childComplexity int, imageFaceIDs []int) int
-		FavoriteMedia                func(childComplexity int, mediaID int, favorite bool) int
-		InitialSetupWizard           func(childComplexity int, username string, password string, rootPath string) int
-		MoveImageFaces               func(childComplexity int, imageFaceIDs []int, destinationFaceGroupID int) int
-		ProtectShareToken            func(childComplexity int, token string, password *string) int
-		RecognizeUnlabeledFaces      func(childComplexity int) int
-		ResetAlbumCover              func(childComplexity int, albumID int) int
-		ScanAll                      func(childComplexity int) int
-		ScanUser                     func(childComplexity int, userID int) int
-		SetAlbumCover                func(childComplexity int, coverID int) int
-		SetFaceGroupLabel            func(childComplexity int, faceGroupID int, label *string) int
-		SetPeriodicScanInterval      func(childComplexity int, interval int) int
-		SetScannerConcurrentWorkers  func(childComplexity int, workers int) int
-		SetThumbnailDownsampleMethod func(childComplexity int, method models.ThumbnailFilter) int
-		ShareAlbum                   func(childComplexity int, albumID int, expire *time.Time, password *string) int
-		ShareMedia                   func(childComplexity int, mediaID int, expire *time.Time, password *string) int
-		UpdateUser                   func(childComplexity int, id int, username *string, password *string, admin *bool) int
-		UserAddRootPath              func(childComplexity int, id int, rootPath string) int
-		UserRemoveRootAlbum          func(childComplexity int, userID int, albumID int) int
+		AuthorizeUser               func(childComplexity int, username string, password string) int
+		ChangeUserPreferences       func(childComplexity int, language *string) int
+		CombineFaceGroups           func(childComplexity int, destinationFaceGroupID int, sourceFaceGroupIDs []int) int
+		CreateUser                  func(childComplexity int, username string, password *string, admin bool) int
+		DeleteShareToken            func(childComplexity int, token string) int
+		DeleteUser                  func(childComplexity int, id int) int
+		DetachImageFaces            func(childComplexity int, imageFaceIDs []int) int
+		FavoriteMedia               func(childComplexity int, mediaID int, favorite bool) int
+		InitialSetupWizard          func(childComplexity int, username string, password string, rootPath string) int
+		MoveImageFaces              func(childComplexity int, imageFaceIDs []int, destinationFaceGroupID int) int
+		ProtectShareToken           func(childComplexity int, token string, password *string) int
+		RecognizeUnlabeledFaces     func(childComplexity int) int
+		ResetAlbumCover             func(childComplexity int, albumID int) int
+		ScanAll                     func(childComplexity int) int
+		ScanUser                    func(childComplexity int, userID int) int
+		SetAlbumCover               func(childComplexity int, coverID int) int
+		SetFaceGroupLabel           func(childComplexity int, faceGroupID int, label *string) int
+		SetPeriodicScanInterval     func(childComplexity int, interval int) int
+		SetScannerConcurrentWorkers func(childComplexity int, workers int) int
+		ShareAlbum                  func(childComplexity int, albumID int, expire *time.Time, password *string) int
+		ShareMedia                  func(childComplexity int, mediaID int, expire *time.Time, password *string) int
+		UpdateUser                  func(childComplexity int, id int, username *string, password *string, admin *bool) int
+		UserAddRootPath             func(childComplexity int, id int, rootPath string) int
+		UserRemoveRootAlbum         func(childComplexity int, userID int, albumID int) int
 	}
 
 	Notification struct {
@@ -239,7 +238,6 @@ type ComplexityRoot struct {
 		FaceDetectionEnabled func(childComplexity int) int
 		InitialSetup         func(childComplexity int) int
 		PeriodicScanInterval func(childComplexity int) int
-		ThumbnailMethod      func(childComplexity int) int
 	}
 
 	Subscription struct {
@@ -317,7 +315,7 @@ type MutationResolver interface {
 	ResetAlbumCover(ctx context.Context, albumID int) (*models.Album, error)
 	SetAlbumCover(ctx context.Context, coverID int) (*models.Album, error)
 	SetFaceGroupLabel(ctx context.Context, faceGroupID int, label *string) (*models.FaceGroup, error)
-	CombineFaceGroups(ctx context.Context, destinationFaceGroupID int, sourceFaceGroupID int) (*models.FaceGroup, error)
+	CombineFaceGroups(ctx context.Context, destinationFaceGroupID int, sourceFaceGroupIDs []int) (*models.FaceGroup, error)
 	MoveImageFaces(ctx context.Context, imageFaceIDs []int, destinationFaceGroupID int) (*models.FaceGroup, error)
 	RecognizeUnlabeledFaces(ctx context.Context) ([]*models.ImageFace, error)
 	DetachImageFaces(ctx context.Context, imageFaceIDs []int) (*models.FaceGroup, error)
@@ -330,7 +328,6 @@ type MutationResolver interface {
 	ShareMedia(ctx context.Context, mediaID int, expire *time.Time, password *string) (*models.ShareToken, error)
 	DeleteShareToken(ctx context.Context, token string) (*models.ShareToken, error)
 	ProtectShareToken(ctx context.Context, token string, password *string) (*models.ShareToken, error)
-	SetThumbnailDownsampleMethod(ctx context.Context, method models.ThumbnailFilter) (models.ThumbnailFilter, error)
 	AuthorizeUser(ctx context.Context, username string, password string) (*models.AuthorizeResult, error)
 	InitialSetupWizard(ctx context.Context, username string, password string, rootPath string) (*models.AuthorizeResult, error)
 	UpdateUser(ctx context.Context, id int, username *string, password *string, admin *bool) (*models.User, error)
@@ -387,7 +384,7 @@ func (e *executableSchema) Schema() *ast.Schema {
 	return parsedSchema
 }
 
-func (e *executableSchema) Complexity(typeName, field string, childComplexity int, rawArgs map[string]any) (int, bool) {
+func (e *executableSchema) Complexity(ctx context.Context, typeName, field string, childComplexity int, rawArgs map[string]any) (int, bool) {
 	ec := executionContext{nil, e, 0, 0, nil}
 	_ = ec
 	switch typeName + "." + field {
@@ -411,7 +408,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Album_media_args(context.TODO(), rawArgs)
+		args, err := ec.field_Album_media_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -451,7 +448,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Album_subAlbums_args(context.TODO(), rawArgs)
+		args, err := ec.field_Album_subAlbums_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -526,7 +523,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_FaceGroup_imageFaces_args(context.TODO(), rawArgs)
+		args, err := ec.field_FaceGroup_imageFaces_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -853,7 +850,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_authorizeUser_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_authorizeUser_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -865,7 +862,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_changeUserPreferences_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_changeUserPreferences_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -877,19 +874,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_combineFaceGroups_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_combineFaceGroups_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CombineFaceGroups(childComplexity, args["destinationFaceGroupID"].(int), args["sourceFaceGroupID"].(int)), true
+		return e.complexity.Mutation.CombineFaceGroups(childComplexity, args["destinationFaceGroupID"].(int), args["sourceFaceGroupIDs"].([]int)), true
 
 	case "Mutation.createUser":
 		if e.complexity.Mutation.CreateUser == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_createUser_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_createUser_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -901,7 +898,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_deleteShareToken_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_deleteShareToken_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -913,7 +910,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_deleteUser_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_deleteUser_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -925,7 +922,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_detachImageFaces_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_detachImageFaces_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -937,7 +934,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_favoriteMedia_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_favoriteMedia_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -949,7 +946,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_initialSetupWizard_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_initialSetupWizard_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -961,7 +958,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_moveImageFaces_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_moveImageFaces_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -973,7 +970,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_protectShareToken_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_protectShareToken_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -992,7 +989,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_resetAlbumCover_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_resetAlbumCover_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -1011,7 +1008,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_scanUser_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_scanUser_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -1023,7 +1020,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_setAlbumCover_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_setAlbumCover_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -1035,7 +1032,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_setFaceGroupLabel_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_setFaceGroupLabel_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -1047,7 +1044,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_setPeriodicScanInterval_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_setPeriodicScanInterval_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -1059,31 +1056,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_setScannerConcurrentWorkers_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_setScannerConcurrentWorkers_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
 		return e.complexity.Mutation.SetScannerConcurrentWorkers(childComplexity, args["workers"].(int)), true
 
-	case "Mutation.setThumbnailDownsampleMethod":
-		if e.complexity.Mutation.SetThumbnailDownsampleMethod == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_setThumbnailDownsampleMethod_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.SetThumbnailDownsampleMethod(childComplexity, args["method"].(models.ThumbnailFilter)), true
-
 	case "Mutation.shareAlbum":
 		if e.complexity.Mutation.ShareAlbum == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_shareAlbum_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_shareAlbum_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -1095,7 +1080,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_shareMedia_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_shareMedia_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -1107,7 +1092,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_updateUser_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_updateUser_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -1119,7 +1104,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_userAddRootPath_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_userAddRootPath_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -1131,7 +1116,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_userRemoveRootAlbum_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_userRemoveRootAlbum_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -1199,7 +1184,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Query_album_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_album_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -1211,7 +1196,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Query_faceGroup_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_faceGroup_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -1230,7 +1215,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Query_media_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_media_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -1242,7 +1227,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Query_mediaList_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_mediaList_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -1254,7 +1239,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Query_myAlbums_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_myAlbums_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -1266,7 +1251,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Query_myFaceGroups_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_myFaceGroups_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -1278,7 +1263,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Query_myMedia_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_myMedia_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -1297,7 +1282,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Query_myTimeline_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_myTimeline_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -1323,7 +1308,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Query_search_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_search_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -1335,7 +1320,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Query_shareToken_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_shareToken_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -1347,7 +1332,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Query_shareTokenValidatePassword_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_shareTokenValidatePassword_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -1366,7 +1351,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Query_user_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_user_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -1498,13 +1483,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.SiteInfo.PeriodicScanInterval(childComplexity), true
-
-	case "SiteInfo.thumbnailMethod":
-		if e.complexity.SiteInfo.ThumbnailMethod == nil {
-			break
-		}
-
-		return e.complexity.SiteInfo.ThumbnailMethod(childComplexity), true
 
 	case "Subscription.notification":
 		if e.complexity.Subscription.Notification == nil {
@@ -1784,7 +1762,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
-//go:embed "resolvers/album.graphql" "resolvers/faces.graphql" "resolvers/media.graphql" "resolvers/media_geo_json.graphql" "resolvers/notification.graphql" "resolvers/root.graphql" "resolvers/scanner.graphql" "resolvers/search.graphql" "resolvers/share_token.graphql" "resolvers/site_info.graphql" "resolvers/thumbnails.graphql" "resolvers/timeline.graphql" "resolvers/user.graphql"
+//go:embed "resolvers/album.graphql" "resolvers/faces.graphql" "resolvers/media.graphql" "resolvers/media_geo_json.graphql" "resolvers/notification.graphql" "resolvers/root.graphql" "resolvers/scanner.graphql" "resolvers/search.graphql" "resolvers/share_token.graphql" "resolvers/site_info.graphql" "resolvers/timeline.graphql" "resolvers/user.graphql"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -1806,7 +1784,6 @@ var sources = []*ast.Source{
 	{Name: "resolvers/search.graphql", Input: sourceData("resolvers/search.graphql"), BuiltIn: false},
 	{Name: "resolvers/share_token.graphql", Input: sourceData("resolvers/share_token.graphql"), BuiltIn: false},
 	{Name: "resolvers/site_info.graphql", Input: sourceData("resolvers/site_info.graphql"), BuiltIn: false},
-	{Name: "resolvers/thumbnails.graphql", Input: sourceData("resolvers/thumbnails.graphql"), BuiltIn: false},
 	{Name: "resolvers/timeline.graphql", Input: sourceData("resolvers/timeline.graphql"), BuiltIn: false},
 	{Name: "resolvers/user.graphql", Input: sourceData("resolvers/user.graphql"), BuiltIn: false},
 }
@@ -1840,11 +1817,7 @@ func (ec *executionContext) field_Album_media_argsOrder(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*models.Ordering, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["order"]
-	if !ok {
+	if _, ok := rawArgs["order"]; !ok {
 		var zeroVal *models.Ordering
 		return zeroVal, nil
 	}
@@ -1862,11 +1835,7 @@ func (ec *executionContext) field_Album_media_argsPaginate(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*models.Pagination, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["paginate"]
-	if !ok {
+	if _, ok := rawArgs["paginate"]; !ok {
 		var zeroVal *models.Pagination
 		return zeroVal, nil
 	}
@@ -1884,11 +1853,7 @@ func (ec *executionContext) field_Album_media_argsOnlyFavorites(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*bool, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["onlyFavorites"]
-	if !ok {
+	if _, ok := rawArgs["onlyFavorites"]; !ok {
 		var zeroVal *bool
 		return zeroVal, nil
 	}
@@ -1921,11 +1886,7 @@ func (ec *executionContext) field_Album_subAlbums_argsOrder(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*models.Ordering, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["order"]
-	if !ok {
+	if _, ok := rawArgs["order"]; !ok {
 		var zeroVal *models.Ordering
 		return zeroVal, nil
 	}
@@ -1943,11 +1904,7 @@ func (ec *executionContext) field_Album_subAlbums_argsPaginate(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*models.Pagination, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["paginate"]
-	if !ok {
+	if _, ok := rawArgs["paginate"]; !ok {
 		var zeroVal *models.Pagination
 		return zeroVal, nil
 	}
@@ -1975,11 +1932,7 @@ func (ec *executionContext) field_FaceGroup_imageFaces_argsPaginate(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*models.Pagination, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["paginate"]
-	if !ok {
+	if _, ok := rawArgs["paginate"]; !ok {
 		var zeroVal *models.Pagination
 		return zeroVal, nil
 	}
@@ -2012,11 +1965,7 @@ func (ec *executionContext) field_Mutation_authorizeUser_argsUsername(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["username"]
-	if !ok {
+	if _, ok := rawArgs["username"]; !ok {
 		var zeroVal string
 		return zeroVal, nil
 	}
@@ -2034,11 +1983,7 @@ func (ec *executionContext) field_Mutation_authorizeUser_argsPassword(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["password"]
-	if !ok {
+	if _, ok := rawArgs["password"]; !ok {
 		var zeroVal string
 		return zeroVal, nil
 	}
@@ -2066,11 +2011,7 @@ func (ec *executionContext) field_Mutation_changeUserPreferences_argsLanguage(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["language"]
-	if !ok {
+	if _, ok := rawArgs["language"]; !ok {
 		var zeroVal *string
 		return zeroVal, nil
 	}
@@ -2092,22 +2033,18 @@ func (ec *executionContext) field_Mutation_combineFaceGroups_args(ctx context.Co
 		return nil, err
 	}
 	args["destinationFaceGroupID"] = arg0
-	arg1, err := ec.field_Mutation_combineFaceGroups_argsSourceFaceGroupID(ctx, rawArgs)
+	arg1, err := ec.field_Mutation_combineFaceGroups_argsSourceFaceGroupIDs(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["sourceFaceGroupID"] = arg1
+	args["sourceFaceGroupIDs"] = arg1
 	return args, nil
 }
 func (ec *executionContext) field_Mutation_combineFaceGroups_argsDestinationFaceGroupID(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["destinationFaceGroupID"]
-	if !ok {
+	if _, ok := rawArgs["destinationFaceGroupID"]; !ok {
 		var zeroVal int
 		return zeroVal, nil
 	}
@@ -2121,25 +2058,21 @@ func (ec *executionContext) field_Mutation_combineFaceGroups_argsDestinationFace
 	return zeroVal, nil
 }
 
-func (ec *executionContext) field_Mutation_combineFaceGroups_argsSourceFaceGroupID(
+func (ec *executionContext) field_Mutation_combineFaceGroups_argsSourceFaceGroupIDs(
 	ctx context.Context,
 	rawArgs map[string]any,
-) (int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["sourceFaceGroupID"]
-	if !ok {
-		var zeroVal int
+) ([]int, error) {
+	if _, ok := rawArgs["sourceFaceGroupIDs"]; !ok {
+		var zeroVal []int
 		return zeroVal, nil
 	}
 
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceFaceGroupID"))
-	if tmp, ok := rawArgs["sourceFaceGroupID"]; ok {
-		return ec.unmarshalNID2int(ctx, tmp)
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceFaceGroupIDs"))
+	if tmp, ok := rawArgs["sourceFaceGroupIDs"]; ok {
+		return ec.unmarshalNID2ᚕintᚄ(ctx, tmp)
 	}
 
-	var zeroVal int
+	var zeroVal []int
 	return zeroVal, nil
 }
 
@@ -2167,11 +2100,7 @@ func (ec *executionContext) field_Mutation_createUser_argsUsername(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["username"]
-	if !ok {
+	if _, ok := rawArgs["username"]; !ok {
 		var zeroVal string
 		return zeroVal, nil
 	}
@@ -2189,11 +2118,7 @@ func (ec *executionContext) field_Mutation_createUser_argsPassword(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["password"]
-	if !ok {
+	if _, ok := rawArgs["password"]; !ok {
 		var zeroVal *string
 		return zeroVal, nil
 	}
@@ -2211,11 +2136,7 @@ func (ec *executionContext) field_Mutation_createUser_argsAdmin(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (bool, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["admin"]
-	if !ok {
+	if _, ok := rawArgs["admin"]; !ok {
 		var zeroVal bool
 		return zeroVal, nil
 	}
@@ -2243,11 +2164,7 @@ func (ec *executionContext) field_Mutation_deleteShareToken_argsToken(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["token"]
-	if !ok {
+	if _, ok := rawArgs["token"]; !ok {
 		var zeroVal string
 		return zeroVal, nil
 	}
@@ -2275,11 +2192,7 @@ func (ec *executionContext) field_Mutation_deleteUser_argsID(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["id"]
-	if !ok {
+	if _, ok := rawArgs["id"]; !ok {
 		var zeroVal int
 		return zeroVal, nil
 	}
@@ -2307,11 +2220,7 @@ func (ec *executionContext) field_Mutation_detachImageFaces_argsImageFaceIDs(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) ([]int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["imageFaceIDs"]
-	if !ok {
+	if _, ok := rawArgs["imageFaceIDs"]; !ok {
 		var zeroVal []int
 		return zeroVal, nil
 	}
@@ -2344,11 +2253,7 @@ func (ec *executionContext) field_Mutation_favoriteMedia_argsMediaID(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["mediaId"]
-	if !ok {
+	if _, ok := rawArgs["mediaId"]; !ok {
 		var zeroVal int
 		return zeroVal, nil
 	}
@@ -2366,11 +2271,7 @@ func (ec *executionContext) field_Mutation_favoriteMedia_argsFavorite(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (bool, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["favorite"]
-	if !ok {
+	if _, ok := rawArgs["favorite"]; !ok {
 		var zeroVal bool
 		return zeroVal, nil
 	}
@@ -2408,11 +2309,7 @@ func (ec *executionContext) field_Mutation_initialSetupWizard_argsUsername(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["username"]
-	if !ok {
+	if _, ok := rawArgs["username"]; !ok {
 		var zeroVal string
 		return zeroVal, nil
 	}
@@ -2430,11 +2327,7 @@ func (ec *executionContext) field_Mutation_initialSetupWizard_argsPassword(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["password"]
-	if !ok {
+	if _, ok := rawArgs["password"]; !ok {
 		var zeroVal string
 		return zeroVal, nil
 	}
@@ -2452,11 +2345,7 @@ func (ec *executionContext) field_Mutation_initialSetupWizard_argsRootPath(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["rootPath"]
-	if !ok {
+	if _, ok := rawArgs["rootPath"]; !ok {
 		var zeroVal string
 		return zeroVal, nil
 	}
@@ -2489,11 +2378,7 @@ func (ec *executionContext) field_Mutation_moveImageFaces_argsImageFaceIDs(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) ([]int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["imageFaceIDs"]
-	if !ok {
+	if _, ok := rawArgs["imageFaceIDs"]; !ok {
 		var zeroVal []int
 		return zeroVal, nil
 	}
@@ -2511,11 +2396,7 @@ func (ec *executionContext) field_Mutation_moveImageFaces_argsDestinationFaceGro
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["destinationFaceGroupID"]
-	if !ok {
+	if _, ok := rawArgs["destinationFaceGroupID"]; !ok {
 		var zeroVal int
 		return zeroVal, nil
 	}
@@ -2548,11 +2429,7 @@ func (ec *executionContext) field_Mutation_protectShareToken_argsToken(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["token"]
-	if !ok {
+	if _, ok := rawArgs["token"]; !ok {
 		var zeroVal string
 		return zeroVal, nil
 	}
@@ -2570,11 +2447,7 @@ func (ec *executionContext) field_Mutation_protectShareToken_argsPassword(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["password"]
-	if !ok {
+	if _, ok := rawArgs["password"]; !ok {
 		var zeroVal *string
 		return zeroVal, nil
 	}
@@ -2602,11 +2475,7 @@ func (ec *executionContext) field_Mutation_resetAlbumCover_argsAlbumID(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["albumID"]
-	if !ok {
+	if _, ok := rawArgs["albumID"]; !ok {
 		var zeroVal int
 		return zeroVal, nil
 	}
@@ -2634,11 +2503,7 @@ func (ec *executionContext) field_Mutation_scanUser_argsUserID(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["userId"]
-	if !ok {
+	if _, ok := rawArgs["userId"]; !ok {
 		var zeroVal int
 		return zeroVal, nil
 	}
@@ -2666,11 +2531,7 @@ func (ec *executionContext) field_Mutation_setAlbumCover_argsCoverID(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["coverID"]
-	if !ok {
+	if _, ok := rawArgs["coverID"]; !ok {
 		var zeroVal int
 		return zeroVal, nil
 	}
@@ -2703,11 +2564,7 @@ func (ec *executionContext) field_Mutation_setFaceGroupLabel_argsFaceGroupID(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["faceGroupID"]
-	if !ok {
+	if _, ok := rawArgs["faceGroupID"]; !ok {
 		var zeroVal int
 		return zeroVal, nil
 	}
@@ -2725,11 +2582,7 @@ func (ec *executionContext) field_Mutation_setFaceGroupLabel_argsLabel(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["label"]
-	if !ok {
+	if _, ok := rawArgs["label"]; !ok {
 		var zeroVal *string
 		return zeroVal, nil
 	}
@@ -2757,11 +2610,7 @@ func (ec *executionContext) field_Mutation_setPeriodicScanInterval_argsInterval(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["interval"]
-	if !ok {
+	if _, ok := rawArgs["interval"]; !ok {
 		var zeroVal int
 		return zeroVal, nil
 	}
@@ -2789,11 +2638,7 @@ func (ec *executionContext) field_Mutation_setScannerConcurrentWorkers_argsWorke
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["workers"]
-	if !ok {
+	if _, ok := rawArgs["workers"]; !ok {
 		var zeroVal int
 		return zeroVal, nil
 	}
@@ -2804,38 +2649,6 @@ func (ec *executionContext) field_Mutation_setScannerConcurrentWorkers_argsWorke
 	}
 
 	var zeroVal int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Mutation_setThumbnailDownsampleMethod_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := ec.field_Mutation_setThumbnailDownsampleMethod_argsMethod(ctx, rawArgs)
-	if err != nil {
-		return nil, err
-	}
-	args["method"] = arg0
-	return args, nil
-}
-func (ec *executionContext) field_Mutation_setThumbnailDownsampleMethod_argsMethod(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (models.ThumbnailFilter, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["method"]
-	if !ok {
-		var zeroVal models.ThumbnailFilter
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("method"))
-	if tmp, ok := rawArgs["method"]; ok {
-		return ec.unmarshalNThumbnailFilter2githubᚗcomᚋphotoviewᚋphotoviewᚋapiᚋgraphqlᚋmodelsᚐThumbnailFilter(ctx, tmp)
-	}
-
-	var zeroVal models.ThumbnailFilter
 	return zeroVal, nil
 }
 
@@ -2863,11 +2676,7 @@ func (ec *executionContext) field_Mutation_shareAlbum_argsAlbumID(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["albumId"]
-	if !ok {
+	if _, ok := rawArgs["albumId"]; !ok {
 		var zeroVal int
 		return zeroVal, nil
 	}
@@ -2885,11 +2694,7 @@ func (ec *executionContext) field_Mutation_shareAlbum_argsExpire(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*time.Time, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["expire"]
-	if !ok {
+	if _, ok := rawArgs["expire"]; !ok {
 		var zeroVal *time.Time
 		return zeroVal, nil
 	}
@@ -2907,11 +2712,7 @@ func (ec *executionContext) field_Mutation_shareAlbum_argsPassword(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["password"]
-	if !ok {
+	if _, ok := rawArgs["password"]; !ok {
 		var zeroVal *string
 		return zeroVal, nil
 	}
@@ -2949,11 +2750,7 @@ func (ec *executionContext) field_Mutation_shareMedia_argsMediaID(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["mediaId"]
-	if !ok {
+	if _, ok := rawArgs["mediaId"]; !ok {
 		var zeroVal int
 		return zeroVal, nil
 	}
@@ -2971,11 +2768,7 @@ func (ec *executionContext) field_Mutation_shareMedia_argsExpire(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*time.Time, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["expire"]
-	if !ok {
+	if _, ok := rawArgs["expire"]; !ok {
 		var zeroVal *time.Time
 		return zeroVal, nil
 	}
@@ -2993,11 +2786,7 @@ func (ec *executionContext) field_Mutation_shareMedia_argsPassword(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["password"]
-	if !ok {
+	if _, ok := rawArgs["password"]; !ok {
 		var zeroVal *string
 		return zeroVal, nil
 	}
@@ -3040,11 +2829,7 @@ func (ec *executionContext) field_Mutation_updateUser_argsID(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["id"]
-	if !ok {
+	if _, ok := rawArgs["id"]; !ok {
 		var zeroVal int
 		return zeroVal, nil
 	}
@@ -3062,11 +2847,7 @@ func (ec *executionContext) field_Mutation_updateUser_argsUsername(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["username"]
-	if !ok {
+	if _, ok := rawArgs["username"]; !ok {
 		var zeroVal *string
 		return zeroVal, nil
 	}
@@ -3084,11 +2865,7 @@ func (ec *executionContext) field_Mutation_updateUser_argsPassword(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["password"]
-	if !ok {
+	if _, ok := rawArgs["password"]; !ok {
 		var zeroVal *string
 		return zeroVal, nil
 	}
@@ -3106,11 +2883,7 @@ func (ec *executionContext) field_Mutation_updateUser_argsAdmin(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*bool, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["admin"]
-	if !ok {
+	if _, ok := rawArgs["admin"]; !ok {
 		var zeroVal *bool
 		return zeroVal, nil
 	}
@@ -3143,11 +2916,7 @@ func (ec *executionContext) field_Mutation_userAddRootPath_argsID(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["id"]
-	if !ok {
+	if _, ok := rawArgs["id"]; !ok {
 		var zeroVal int
 		return zeroVal, nil
 	}
@@ -3165,11 +2934,7 @@ func (ec *executionContext) field_Mutation_userAddRootPath_argsRootPath(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["rootPath"]
-	if !ok {
+	if _, ok := rawArgs["rootPath"]; !ok {
 		var zeroVal string
 		return zeroVal, nil
 	}
@@ -3202,11 +2967,7 @@ func (ec *executionContext) field_Mutation_userRemoveRootAlbum_argsUserID(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["userId"]
-	if !ok {
+	if _, ok := rawArgs["userId"]; !ok {
 		var zeroVal int
 		return zeroVal, nil
 	}
@@ -3224,11 +2985,7 @@ func (ec *executionContext) field_Mutation_userRemoveRootAlbum_argsAlbumID(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["albumId"]
-	if !ok {
+	if _, ok := rawArgs["albumId"]; !ok {
 		var zeroVal int
 		return zeroVal, nil
 	}
@@ -3256,11 +3013,7 @@ func (ec *executionContext) field_Query___type_argsName(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["name"]
-	if !ok {
+	if _, ok := rawArgs["name"]; !ok {
 		var zeroVal string
 		return zeroVal, nil
 	}
@@ -3293,11 +3046,7 @@ func (ec *executionContext) field_Query_album_argsID(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["id"]
-	if !ok {
+	if _, ok := rawArgs["id"]; !ok {
 		var zeroVal int
 		return zeroVal, nil
 	}
@@ -3315,11 +3064,7 @@ func (ec *executionContext) field_Query_album_argsTokenCredentials(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*models.ShareTokenCredentials, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["tokenCredentials"]
-	if !ok {
+	if _, ok := rawArgs["tokenCredentials"]; !ok {
 		var zeroVal *models.ShareTokenCredentials
 		return zeroVal, nil
 	}
@@ -3347,11 +3092,7 @@ func (ec *executionContext) field_Query_faceGroup_argsID(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["id"]
-	if !ok {
+	if _, ok := rawArgs["id"]; !ok {
 		var zeroVal int
 		return zeroVal, nil
 	}
@@ -3379,11 +3120,7 @@ func (ec *executionContext) field_Query_mediaList_argsIds(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) ([]int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["ids"]
-	if !ok {
+	if _, ok := rawArgs["ids"]; !ok {
 		var zeroVal []int
 		return zeroVal, nil
 	}
@@ -3416,11 +3153,7 @@ func (ec *executionContext) field_Query_media_argsID(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["id"]
-	if !ok {
+	if _, ok := rawArgs["id"]; !ok {
 		var zeroVal int
 		return zeroVal, nil
 	}
@@ -3438,11 +3171,7 @@ func (ec *executionContext) field_Query_media_argsTokenCredentials(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*models.ShareTokenCredentials, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["tokenCredentials"]
-	if !ok {
+	if _, ok := rawArgs["tokenCredentials"]; !ok {
 		var zeroVal *models.ShareTokenCredentials
 		return zeroVal, nil
 	}
@@ -3490,11 +3219,7 @@ func (ec *executionContext) field_Query_myAlbums_argsOrder(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*models.Ordering, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["order"]
-	if !ok {
+	if _, ok := rawArgs["order"]; !ok {
 		var zeroVal *models.Ordering
 		return zeroVal, nil
 	}
@@ -3512,11 +3237,7 @@ func (ec *executionContext) field_Query_myAlbums_argsPaginate(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*models.Pagination, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["paginate"]
-	if !ok {
+	if _, ok := rawArgs["paginate"]; !ok {
 		var zeroVal *models.Pagination
 		return zeroVal, nil
 	}
@@ -3534,11 +3255,7 @@ func (ec *executionContext) field_Query_myAlbums_argsOnlyRoot(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*bool, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["onlyRoot"]
-	if !ok {
+	if _, ok := rawArgs["onlyRoot"]; !ok {
 		var zeroVal *bool
 		return zeroVal, nil
 	}
@@ -3556,11 +3273,7 @@ func (ec *executionContext) field_Query_myAlbums_argsShowEmpty(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*bool, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["showEmpty"]
-	if !ok {
+	if _, ok := rawArgs["showEmpty"]; !ok {
 		var zeroVal *bool
 		return zeroVal, nil
 	}
@@ -3578,11 +3291,7 @@ func (ec *executionContext) field_Query_myAlbums_argsOnlyWithFavorites(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*bool, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["onlyWithFavorites"]
-	if !ok {
+	if _, ok := rawArgs["onlyWithFavorites"]; !ok {
 		var zeroVal *bool
 		return zeroVal, nil
 	}
@@ -3610,11 +3319,7 @@ func (ec *executionContext) field_Query_myFaceGroups_argsPaginate(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*models.Pagination, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["paginate"]
-	if !ok {
+	if _, ok := rawArgs["paginate"]; !ok {
 		var zeroVal *models.Pagination
 		return zeroVal, nil
 	}
@@ -3647,11 +3352,7 @@ func (ec *executionContext) field_Query_myMedia_argsOrder(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*models.Ordering, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["order"]
-	if !ok {
+	if _, ok := rawArgs["order"]; !ok {
 		var zeroVal *models.Ordering
 		return zeroVal, nil
 	}
@@ -3669,11 +3370,7 @@ func (ec *executionContext) field_Query_myMedia_argsPaginate(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*models.Pagination, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["paginate"]
-	if !ok {
+	if _, ok := rawArgs["paginate"]; !ok {
 		var zeroVal *models.Pagination
 		return zeroVal, nil
 	}
@@ -3711,11 +3408,7 @@ func (ec *executionContext) field_Query_myTimeline_argsPaginate(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*models.Pagination, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["paginate"]
-	if !ok {
+	if _, ok := rawArgs["paginate"]; !ok {
 		var zeroVal *models.Pagination
 		return zeroVal, nil
 	}
@@ -3733,11 +3426,7 @@ func (ec *executionContext) field_Query_myTimeline_argsOnlyFavorites(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*bool, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["onlyFavorites"]
-	if !ok {
+	if _, ok := rawArgs["onlyFavorites"]; !ok {
 		var zeroVal *bool
 		return zeroVal, nil
 	}
@@ -3755,11 +3444,7 @@ func (ec *executionContext) field_Query_myTimeline_argsFromDate(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*time.Time, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["fromDate"]
-	if !ok {
+	if _, ok := rawArgs["fromDate"]; !ok {
 		var zeroVal *time.Time
 		return zeroVal, nil
 	}
@@ -3797,11 +3482,7 @@ func (ec *executionContext) field_Query_search_argsQuery(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (string, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["query"]
-	if !ok {
+	if _, ok := rawArgs["query"]; !ok {
 		var zeroVal string
 		return zeroVal, nil
 	}
@@ -3819,11 +3500,7 @@ func (ec *executionContext) field_Query_search_argsLimitMedia(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["limitMedia"]
-	if !ok {
+	if _, ok := rawArgs["limitMedia"]; !ok {
 		var zeroVal *int
 		return zeroVal, nil
 	}
@@ -3841,11 +3518,7 @@ func (ec *executionContext) field_Query_search_argsLimitAlbums(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*int, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["limitAlbums"]
-	if !ok {
+	if _, ok := rawArgs["limitAlbums"]; !ok {
 		var zeroVal *int
 		return zeroVal, nil
 	}
@@ -3873,11 +3546,7 @@ func (ec *executionContext) field_Query_shareTokenValidatePassword_argsCredentia
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (models.ShareTokenCredentials, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["credentials"]
-	if !ok {
+	if _, ok := rawArgs["credentials"]; !ok {
 		var zeroVal models.ShareTokenCredentials
 		return zeroVal, nil
 	}
@@ -3905,11 +3574,7 @@ func (ec *executionContext) field_Query_shareToken_argsCredentials(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (models.ShareTokenCredentials, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["credentials"]
-	if !ok {
+	if _, ok := rawArgs["credentials"]; !ok {
 		var zeroVal models.ShareTokenCredentials
 		return zeroVal, nil
 	}
@@ -3942,11 +3607,7 @@ func (ec *executionContext) field_Query_user_argsOrder(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*models.Ordering, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["order"]
-	if !ok {
+	if _, ok := rawArgs["order"]; !ok {
 		var zeroVal *models.Ordering
 		return zeroVal, nil
 	}
@@ -3964,11 +3625,7 @@ func (ec *executionContext) field_Query_user_argsPaginate(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (*models.Pagination, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["paginate"]
-	if !ok {
+	if _, ok := rawArgs["paginate"]; !ok {
 		var zeroVal *models.Pagination
 		return zeroVal, nil
 	}
@@ -3979,6 +3636,62 @@ func (ec *executionContext) field_Query_user_argsPaginate(
 	}
 
 	var zeroVal *models.Pagination
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field___Directive_args_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field___Directive_args_argsIncludeDeprecated(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["includeDeprecated"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field___Directive_args_argsIncludeDeprecated(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*bool, error) {
+	if _, ok := rawArgs["includeDeprecated"]; !ok {
+		var zeroVal *bool
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("includeDeprecated"))
+	if tmp, ok := rawArgs["includeDeprecated"]; ok {
+		return ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+	}
+
+	var zeroVal *bool
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field___Field_args_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field___Field_args_argsIncludeDeprecated(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["includeDeprecated"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field___Field_args_argsIncludeDeprecated(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*bool, error) {
+	if _, ok := rawArgs["includeDeprecated"]; !ok {
+		var zeroVal *bool
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("includeDeprecated"))
+	if tmp, ok := rawArgs["includeDeprecated"]; ok {
+		return ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+	}
+
+	var zeroVal *bool
 	return zeroVal, nil
 }
 
@@ -3996,11 +3709,7 @@ func (ec *executionContext) field___Type_enumValues_argsIncludeDeprecated(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (bool, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["includeDeprecated"]
-	if !ok {
+	if _, ok := rawArgs["includeDeprecated"]; !ok {
 		var zeroVal bool
 		return zeroVal, nil
 	}
@@ -4028,11 +3737,7 @@ func (ec *executionContext) field___Type_fields_argsIncludeDeprecated(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (bool, error) {
-	// We won't call the directive if the argument is null.
-	// Set call_argument_directives_with_null to true to call directives
-	// even if the argument is null.
-	_, ok := rawArgs["includeDeprecated"]
-	if !ok {
+	if _, ok := rawArgs["includeDeprecated"]; !ok {
 		var zeroVal bool
 		return zeroVal, nil
 	}
@@ -7505,7 +7210,7 @@ func (ec *executionContext) _Mutation_combineFaceGroups(ctx context.Context, fie
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		directive0 := func(rctx context.Context) (any, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().CombineFaceGroups(rctx, fc.Args["destinationFaceGroupID"].(int), fc.Args["sourceFaceGroupID"].(int))
+			return ec.resolvers.Mutation().CombineFaceGroups(rctx, fc.Args["destinationFaceGroupID"].(int), fc.Args["sourceFaceGroupIDs"].([]int))
 		}
 
 		directive1 := func(ctx context.Context) (any, error) {
@@ -8621,83 +8326,6 @@ func (ec *executionContext) fieldContext_Mutation_protectShareToken(ctx context.
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_protectShareToken_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_setThumbnailDownsampleMethod(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_setThumbnailDownsampleMethod(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		directive0 := func(rctx context.Context) (any, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().SetThumbnailDownsampleMethod(rctx, fc.Args["method"].(models.ThumbnailFilter))
-		}
-
-		directive1 := func(ctx context.Context) (any, error) {
-			if ec.directives.IsAdmin == nil {
-				var zeroVal models.ThumbnailFilter
-				return zeroVal, errors.New("directive isAdmin is not implemented")
-			}
-			return ec.directives.IsAdmin(ctx, nil, directive0)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(models.ThumbnailFilter); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/photoview/photoview/api/graphql/models.ThumbnailFilter`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(models.ThumbnailFilter)
-	fc.Result = res
-	return ec.marshalNThumbnailFilter2githubᚗcomᚋphotoviewᚋphotoviewᚋapiᚋgraphqlᚋmodelsᚐThumbnailFilter(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Mutation_setThumbnailDownsampleMethod(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ThumbnailFilter does not have child fields")
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_setThumbnailDownsampleMethod_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -10697,8 +10325,6 @@ func (ec *executionContext) fieldContext_Query_siteInfo(_ context.Context, field
 				return ec.fieldContext_SiteInfo_periodicScanInterval(ctx, field)
 			case "concurrentWorkers":
 				return ec.fieldContext_SiteInfo_concurrentWorkers(ctx, field)
-			case "thumbnailMethod":
-				return ec.fieldContext_SiteInfo_thumbnailMethod(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type SiteInfo", field.Name)
 		},
@@ -11098,6 +10724,8 @@ func (ec *executionContext) fieldContext_Query___type(ctx context.Context, field
 				return ec.fieldContext___Type_name(ctx, field)
 			case "description":
 				return ec.fieldContext___Type_description(ctx, field)
+			case "specifiedByURL":
+				return ec.fieldContext___Type_specifiedByURL(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
 			case "interfaces":
@@ -11110,8 +10738,8 @@ func (ec *executionContext) fieldContext_Query___type(ctx context.Context, field
 				return ec.fieldContext___Type_inputFields(ctx, field)
 			case "ofType":
 				return ec.fieldContext___Type_ofType(ctx, field)
-			case "specifiedByURL":
-				return ec.fieldContext___Type_specifiedByURL(ctx, field)
+			case "isOneOf":
+				return ec.fieldContext___Type_isOneOf(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Type", field.Name)
 		},
@@ -12125,72 +11753,6 @@ func (ec *executionContext) fieldContext_SiteInfo_concurrentWorkers(_ context.Co
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _SiteInfo_thumbnailMethod(ctx context.Context, field graphql.CollectedField, obj *models.SiteInfo) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_SiteInfo_thumbnailMethod(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		directive0 := func(rctx context.Context) (any, error) {
-			ctx = rctx // use context from middleware stack in children
-			return obj.ThumbnailMethod, nil
-		}
-
-		directive1 := func(ctx context.Context) (any, error) {
-			if ec.directives.IsAdmin == nil {
-				var zeroVal models.ThumbnailFilter
-				return zeroVal, errors.New("directive isAdmin is not implemented")
-			}
-			return ec.directives.IsAdmin(ctx, obj, directive0)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(models.ThumbnailFilter); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/photoview/photoview/api/graphql/models.ThumbnailFilter`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(models.ThumbnailFilter)
-	fc.Result = res
-	return ec.marshalNThumbnailFilter2githubᚗcomᚋphotoviewᚋphotoviewᚋapiᚋgraphqlᚋmodelsᚐThumbnailFilter(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_SiteInfo_thumbnailMethod(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "SiteInfo",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ThumbnailFilter does not have child fields")
 		},
 	}
 	return fc, nil
@@ -13441,6 +13003,50 @@ func (ec *executionContext) fieldContext___Directive_description(_ context.Conte
 	return fc, nil
 }
 
+func (ec *executionContext) ___Directive_isRepeatable(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext___Directive_isRepeatable(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsRepeatable, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext___Directive_isRepeatable(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "__Directive",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) ___Directive_locations(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext___Directive_locations(ctx, field)
 	if err != nil {
@@ -13516,7 +13122,7 @@ func (ec *executionContext) ___Directive_args(ctx context.Context, field graphql
 	return ec.marshalN__InputValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Directive_args(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Directive_args(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Directive",
 		Field:      field,
@@ -13532,53 +13138,24 @@ func (ec *executionContext) fieldContext___Directive_args(_ context.Context, fie
 				return ec.fieldContext___InputValue_type(ctx, field)
 			case "defaultValue":
 				return ec.fieldContext___InputValue_defaultValue(ctx, field)
+			case "isDeprecated":
+				return ec.fieldContext___InputValue_isDeprecated(ctx, field)
+			case "deprecationReason":
+				return ec.fieldContext___InputValue_deprecationReason(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __InputValue", field.Name)
 		},
 	}
-	return fc, nil
-}
-
-func (ec *executionContext) ___Directive_isRepeatable(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext___Directive_isRepeatable(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
 	defer func() {
 		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.IsRepeatable, nil
-	})
-	if err != nil {
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field___Directive_args_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext___Directive_isRepeatable(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "__Directive",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
+		return fc, err
 	}
 	return fc, nil
 }
@@ -13869,7 +13446,7 @@ func (ec *executionContext) ___Field_args(ctx context.Context, field graphql.Col
 	return ec.marshalN__InputValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Field_args(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Field_args(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Field",
 		Field:      field,
@@ -13885,9 +13462,24 @@ func (ec *executionContext) fieldContext___Field_args(_ context.Context, field g
 				return ec.fieldContext___InputValue_type(ctx, field)
 			case "defaultValue":
 				return ec.fieldContext___InputValue_defaultValue(ctx, field)
+			case "isDeprecated":
+				return ec.fieldContext___InputValue_isDeprecated(ctx, field)
+			case "deprecationReason":
+				return ec.fieldContext___InputValue_deprecationReason(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __InputValue", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field___Field_args_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -13937,6 +13529,8 @@ func (ec *executionContext) fieldContext___Field_type(_ context.Context, field g
 				return ec.fieldContext___Type_name(ctx, field)
 			case "description":
 				return ec.fieldContext___Type_description(ctx, field)
+			case "specifiedByURL":
+				return ec.fieldContext___Type_specifiedByURL(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
 			case "interfaces":
@@ -13949,8 +13543,8 @@ func (ec *executionContext) fieldContext___Field_type(_ context.Context, field g
 				return ec.fieldContext___Type_inputFields(ctx, field)
 			case "ofType":
 				return ec.fieldContext___Type_ofType(ctx, field)
-			case "specifiedByURL":
-				return ec.fieldContext___Type_specifiedByURL(ctx, field)
+			case "isOneOf":
+				return ec.fieldContext___Type_isOneOf(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Type", field.Name)
 		},
@@ -14173,6 +13767,8 @@ func (ec *executionContext) fieldContext___InputValue_type(_ context.Context, fi
 				return ec.fieldContext___Type_name(ctx, field)
 			case "description":
 				return ec.fieldContext___Type_description(ctx, field)
+			case "specifiedByURL":
+				return ec.fieldContext___Type_specifiedByURL(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
 			case "interfaces":
@@ -14185,8 +13781,8 @@ func (ec *executionContext) fieldContext___InputValue_type(_ context.Context, fi
 				return ec.fieldContext___Type_inputFields(ctx, field)
 			case "ofType":
 				return ec.fieldContext___Type_ofType(ctx, field)
-			case "specifiedByURL":
-				return ec.fieldContext___Type_specifiedByURL(ctx, field)
+			case "isOneOf":
+				return ec.fieldContext___Type_isOneOf(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Type", field.Name)
 		},
@@ -14227,6 +13823,91 @@ func (ec *executionContext) fieldContext___InputValue_defaultValue(_ context.Con
 		Object:     "__InputValue",
 		Field:      field,
 		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) ___InputValue_isDeprecated(ctx context.Context, field graphql.CollectedField, obj *introspection.InputValue) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext___InputValue_isDeprecated(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsDeprecated(), nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext___InputValue_isDeprecated(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "__InputValue",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) ___InputValue_deprecationReason(ctx context.Context, field graphql.CollectedField, obj *introspection.InputValue) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext___InputValue_deprecationReason(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DeprecationReason(), nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext___InputValue_deprecationReason(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "__InputValue",
+		Field:      field,
+		IsMethod:   true,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
@@ -14321,6 +14002,8 @@ func (ec *executionContext) fieldContext___Schema_types(_ context.Context, field
 				return ec.fieldContext___Type_name(ctx, field)
 			case "description":
 				return ec.fieldContext___Type_description(ctx, field)
+			case "specifiedByURL":
+				return ec.fieldContext___Type_specifiedByURL(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
 			case "interfaces":
@@ -14333,8 +14016,8 @@ func (ec *executionContext) fieldContext___Schema_types(_ context.Context, field
 				return ec.fieldContext___Type_inputFields(ctx, field)
 			case "ofType":
 				return ec.fieldContext___Type_ofType(ctx, field)
-			case "specifiedByURL":
-				return ec.fieldContext___Type_specifiedByURL(ctx, field)
+			case "isOneOf":
+				return ec.fieldContext___Type_isOneOf(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Type", field.Name)
 		},
@@ -14387,6 +14070,8 @@ func (ec *executionContext) fieldContext___Schema_queryType(_ context.Context, f
 				return ec.fieldContext___Type_name(ctx, field)
 			case "description":
 				return ec.fieldContext___Type_description(ctx, field)
+			case "specifiedByURL":
+				return ec.fieldContext___Type_specifiedByURL(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
 			case "interfaces":
@@ -14399,8 +14084,8 @@ func (ec *executionContext) fieldContext___Schema_queryType(_ context.Context, f
 				return ec.fieldContext___Type_inputFields(ctx, field)
 			case "ofType":
 				return ec.fieldContext___Type_ofType(ctx, field)
-			case "specifiedByURL":
-				return ec.fieldContext___Type_specifiedByURL(ctx, field)
+			case "isOneOf":
+				return ec.fieldContext___Type_isOneOf(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Type", field.Name)
 		},
@@ -14450,6 +14135,8 @@ func (ec *executionContext) fieldContext___Schema_mutationType(_ context.Context
 				return ec.fieldContext___Type_name(ctx, field)
 			case "description":
 				return ec.fieldContext___Type_description(ctx, field)
+			case "specifiedByURL":
+				return ec.fieldContext___Type_specifiedByURL(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
 			case "interfaces":
@@ -14462,8 +14149,8 @@ func (ec *executionContext) fieldContext___Schema_mutationType(_ context.Context
 				return ec.fieldContext___Type_inputFields(ctx, field)
 			case "ofType":
 				return ec.fieldContext___Type_ofType(ctx, field)
-			case "specifiedByURL":
-				return ec.fieldContext___Type_specifiedByURL(ctx, field)
+			case "isOneOf":
+				return ec.fieldContext___Type_isOneOf(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Type", field.Name)
 		},
@@ -14513,6 +14200,8 @@ func (ec *executionContext) fieldContext___Schema_subscriptionType(_ context.Con
 				return ec.fieldContext___Type_name(ctx, field)
 			case "description":
 				return ec.fieldContext___Type_description(ctx, field)
+			case "specifiedByURL":
+				return ec.fieldContext___Type_specifiedByURL(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
 			case "interfaces":
@@ -14525,8 +14214,8 @@ func (ec *executionContext) fieldContext___Schema_subscriptionType(_ context.Con
 				return ec.fieldContext___Type_inputFields(ctx, field)
 			case "ofType":
 				return ec.fieldContext___Type_ofType(ctx, field)
-			case "specifiedByURL":
-				return ec.fieldContext___Type_specifiedByURL(ctx, field)
+			case "isOneOf":
+				return ec.fieldContext___Type_isOneOf(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Type", field.Name)
 		},
@@ -14577,12 +14266,12 @@ func (ec *executionContext) fieldContext___Schema_directives(_ context.Context, 
 				return ec.fieldContext___Directive_name(ctx, field)
 			case "description":
 				return ec.fieldContext___Directive_description(ctx, field)
+			case "isRepeatable":
+				return ec.fieldContext___Directive_isRepeatable(ctx, field)
 			case "locations":
 				return ec.fieldContext___Directive_locations(ctx, field)
 			case "args":
 				return ec.fieldContext___Directive_args(ctx, field)
-			case "isRepeatable":
-				return ec.fieldContext___Directive_isRepeatable(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Directive", field.Name)
 		},
@@ -14716,6 +14405,47 @@ func (ec *executionContext) fieldContext___Type_description(_ context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) ___Type_specifiedByURL(ctx context.Context, field graphql.CollectedField, obj *introspection.Type) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext___Type_specifiedByURL(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SpecifiedByURL(), nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext___Type_specifiedByURL(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "__Type",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) ___Type_fields(ctx context.Context, field graphql.CollectedField, obj *introspection.Type) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext___Type_fields(ctx, field)
 	if err != nil {
@@ -14824,6 +14554,8 @@ func (ec *executionContext) fieldContext___Type_interfaces(_ context.Context, fi
 				return ec.fieldContext___Type_name(ctx, field)
 			case "description":
 				return ec.fieldContext___Type_description(ctx, field)
+			case "specifiedByURL":
+				return ec.fieldContext___Type_specifiedByURL(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
 			case "interfaces":
@@ -14836,8 +14568,8 @@ func (ec *executionContext) fieldContext___Type_interfaces(_ context.Context, fi
 				return ec.fieldContext___Type_inputFields(ctx, field)
 			case "ofType":
 				return ec.fieldContext___Type_ofType(ctx, field)
-			case "specifiedByURL":
-				return ec.fieldContext___Type_specifiedByURL(ctx, field)
+			case "isOneOf":
+				return ec.fieldContext___Type_isOneOf(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Type", field.Name)
 		},
@@ -14887,6 +14619,8 @@ func (ec *executionContext) fieldContext___Type_possibleTypes(_ context.Context,
 				return ec.fieldContext___Type_name(ctx, field)
 			case "description":
 				return ec.fieldContext___Type_description(ctx, field)
+			case "specifiedByURL":
+				return ec.fieldContext___Type_specifiedByURL(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
 			case "interfaces":
@@ -14899,8 +14633,8 @@ func (ec *executionContext) fieldContext___Type_possibleTypes(_ context.Context,
 				return ec.fieldContext___Type_inputFields(ctx, field)
 			case "ofType":
 				return ec.fieldContext___Type_ofType(ctx, field)
-			case "specifiedByURL":
-				return ec.fieldContext___Type_specifiedByURL(ctx, field)
+			case "isOneOf":
+				return ec.fieldContext___Type_isOneOf(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Type", field.Name)
 		},
@@ -15014,6 +14748,10 @@ func (ec *executionContext) fieldContext___Type_inputFields(_ context.Context, f
 				return ec.fieldContext___InputValue_type(ctx, field)
 			case "defaultValue":
 				return ec.fieldContext___InputValue_defaultValue(ctx, field)
+			case "isDeprecated":
+				return ec.fieldContext___InputValue_isDeprecated(ctx, field)
+			case "deprecationReason":
+				return ec.fieldContext___InputValue_deprecationReason(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __InputValue", field.Name)
 		},
@@ -15063,6 +14801,8 @@ func (ec *executionContext) fieldContext___Type_ofType(_ context.Context, field 
 				return ec.fieldContext___Type_name(ctx, field)
 			case "description":
 				return ec.fieldContext___Type_description(ctx, field)
+			case "specifiedByURL":
+				return ec.fieldContext___Type_specifiedByURL(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
 			case "interfaces":
@@ -15075,8 +14815,8 @@ func (ec *executionContext) fieldContext___Type_ofType(_ context.Context, field 
 				return ec.fieldContext___Type_inputFields(ctx, field)
 			case "ofType":
 				return ec.fieldContext___Type_ofType(ctx, field)
-			case "specifiedByURL":
-				return ec.fieldContext___Type_specifiedByURL(ctx, field)
+			case "isOneOf":
+				return ec.fieldContext___Type_isOneOf(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Type", field.Name)
 		},
@@ -15084,8 +14824,8 @@ func (ec *executionContext) fieldContext___Type_ofType(_ context.Context, field 
 	return fc, nil
 }
 
-func (ec *executionContext) ___Type_specifiedByURL(ctx context.Context, field graphql.CollectedField, obj *introspection.Type) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext___Type_specifiedByURL(ctx, field)
+func (ec *executionContext) ___Type_isOneOf(ctx context.Context, field graphql.CollectedField, obj *introspection.Type) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext___Type_isOneOf(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -15098,7 +14838,7 @@ func (ec *executionContext) ___Type_specifiedByURL(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.SpecifiedByURL(), nil
+		return obj.IsOneOf(), nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -15107,19 +14847,19 @@ func (ec *executionContext) ___Type_specifiedByURL(ctx context.Context, field gr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(bool)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Type_specifiedByURL(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Type_isOneOf(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Type",
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -16579,13 +16319,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "setThumbnailDownsampleMethod":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_setThumbnailDownsampleMethod(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "authorizeUser":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_authorizeUser(ctx, field)
@@ -17395,11 +17128,6 @@ func (ec *executionContext) _SiteInfo(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
-		case "thumbnailMethod":
-			out.Values[i] = ec._SiteInfo_thumbnailMethod(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -17746,6 +17474,11 @@ func (ec *executionContext) ___Directive(ctx context.Context, sel ast.SelectionS
 			}
 		case "description":
 			out.Values[i] = ec.___Directive_description(ctx, field, obj)
+		case "isRepeatable":
+			out.Values[i] = ec.___Directive_isRepeatable(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "locations":
 			out.Values[i] = ec.___Directive_locations(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -17753,11 +17486,6 @@ func (ec *executionContext) ___Directive(ctx context.Context, sel ast.SelectionS
 			}
 		case "args":
 			out.Values[i] = ec.___Directive_args(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "isRepeatable":
-			out.Values[i] = ec.___Directive_isRepeatable(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -17915,6 +17643,13 @@ func (ec *executionContext) ___InputValue(ctx context.Context, sel ast.Selection
 			}
 		case "defaultValue":
 			out.Values[i] = ec.___InputValue_defaultValue(ctx, field, obj)
+		case "isDeprecated":
+			out.Values[i] = ec.___InputValue_isDeprecated(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deprecationReason":
+			out.Values[i] = ec.___InputValue_deprecationReason(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -18013,6 +17748,8 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = ec.___Type_name(ctx, field, obj)
 		case "description":
 			out.Values[i] = ec.___Type_description(ctx, field, obj)
+		case "specifiedByURL":
+			out.Values[i] = ec.___Type_specifiedByURL(ctx, field, obj)
 		case "fields":
 			out.Values[i] = ec.___Type_fields(ctx, field, obj)
 		case "interfaces":
@@ -18025,8 +17762,8 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = ec.___Type_inputFields(ctx, field, obj)
 		case "ofType":
 			out.Values[i] = ec.___Type_ofType(ctx, field, obj)
-		case "specifiedByURL":
-			out.Values[i] = ec.___Type_specifiedByURL(ctx, field, obj)
+		case "isOneOf":
+			out.Values[i] = ec.___Type_isOneOf(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -18124,6 +17861,7 @@ func (ec *executionContext) marshalNAny2interface(ctx context.Context, sel ast.S
 		}
 		return graphql.Null
 	}
+	_ = sel
 	res := graphql.MarshalAny(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -18153,6 +17891,7 @@ func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v any) (
 }
 
 func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.SelectionSet, v bool) graphql.Marshaler {
+	_ = sel
 	res := graphql.MarshalBoolean(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -18230,6 +17969,7 @@ func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v any) 
 }
 
 func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
+	_ = sel
 	res := graphql.MarshalFloatContext(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -18245,6 +17985,7 @@ func (ec *executionContext) unmarshalNID2int(ctx context.Context, v any) (int, e
 }
 
 func (ec *executionContext) marshalNID2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	_ = sel
 	res := graphql.MarshalIntID(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -18256,9 +17997,7 @@ func (ec *executionContext) marshalNID2int(ctx context.Context, sel ast.Selectio
 
 func (ec *executionContext) unmarshalNID2ᚕintᚄ(ctx context.Context, v any) ([]int, error) {
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]int, len(vSlice))
 	for i := range vSlice {
@@ -18346,6 +18085,7 @@ func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v any) (int, 
 }
 
 func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	_ = sel
 	res := graphql.MarshalInt(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -18361,6 +18101,7 @@ func (ec *executionContext) unmarshalNInt2int64(ctx context.Context, v any) (int
 }
 
 func (ec *executionContext) marshalNInt2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
+	_ = sel
 	res := graphql.MarshalInt64(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -18489,6 +18230,7 @@ func (ec *executionContext) unmarshalNMediaType2githubᚗcomᚋphotoviewᚋphoto
 }
 
 func (ec *executionContext) marshalNMediaType2githubᚗcomᚋphotoviewᚋphotoviewᚋapiᚋgraphqlᚋmodelsᚐMediaType(ctx context.Context, sel ast.SelectionSet, v models.MediaType) graphql.Marshaler {
+	_ = sel
 	res := graphql.MarshalString(string(v))
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -18643,6 +18385,7 @@ func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) 
 }
 
 func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	_ = sel
 	res := graphql.MarshalString(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -18652,22 +18395,13 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) unmarshalNThumbnailFilter2githubᚗcomᚋphotoviewᚋphotoviewᚋapiᚋgraphqlᚋmodelsᚐThumbnailFilter(ctx context.Context, v any) (models.ThumbnailFilter, error) {
-	var res models.ThumbnailFilter
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNThumbnailFilter2githubᚗcomᚋphotoviewᚋphotoviewᚋapiᚋgraphqlᚋmodelsᚐThumbnailFilter(ctx context.Context, sel ast.SelectionSet, v models.ThumbnailFilter) graphql.Marshaler {
-	return v
-}
-
 func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v any) (time.Time, error) {
 	res, err := graphql.UnmarshalTime(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
+	_ = sel
 	res := graphql.MarshalTime(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -18803,6 +18537,7 @@ func (ec *executionContext) unmarshalN__DirectiveLocation2string(ctx context.Con
 }
 
 func (ec *executionContext) marshalN__DirectiveLocation2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	_ = sel
 	res := graphql.MarshalString(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -18814,9 +18549,7 @@ func (ec *executionContext) marshalN__DirectiveLocation2string(ctx context.Conte
 
 func (ec *executionContext) unmarshalN__DirectiveLocation2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
 	var vSlice []any
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]string, len(vSlice))
 	for i := range vSlice {
@@ -18993,6 +18726,7 @@ func (ec *executionContext) unmarshalN__TypeKind2string(ctx context.Context, v a
 }
 
 func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	_ = sel
 	res := graphql.MarshalString(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -19022,6 +18756,8 @@ func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v any) (
 }
 
 func (ec *executionContext) marshalOBoolean2bool(ctx context.Context, sel ast.SelectionSet, v bool) graphql.Marshaler {
+	_ = sel
+	_ = ctx
 	res := graphql.MarshalBoolean(v)
 	return res
 }
@@ -19038,6 +18774,8 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	if v == nil {
 		return graphql.Null
 	}
+	_ = sel
+	_ = ctx
 	res := graphql.MarshalBoolean(*v)
 	return res
 }
@@ -19061,6 +18799,7 @@ func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel as
 	if v == nil {
 		return graphql.Null
 	}
+	_ = sel
 	res := graphql.MarshalFloatContext(*v)
 	return graphql.WrapContextMarshaler(ctx, res)
 }
@@ -19077,6 +18816,8 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	if v == nil {
 		return graphql.Null
 	}
+	_ = sel
+	_ = ctx
 	res := graphql.MarshalInt(*v)
 	return res
 }
@@ -19093,6 +18834,8 @@ func (ec *executionContext) marshalOInt2ᚖint64(ctx context.Context, sel ast.Se
 	if v == nil {
 		return graphql.Null
 	}
+	_ = sel
+	_ = ctx
 	res := graphql.MarshalInt64(*v)
 	return res
 }
@@ -19186,6 +18929,8 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	if v == nil {
 		return graphql.Null
 	}
+	_ = sel
+	_ = ctx
 	res := graphql.MarshalString(*v)
 	return res
 }
@@ -19202,6 +18947,8 @@ func (ec *executionContext) marshalOTime2ᚖtimeᚐTime(ctx context.Context, sel
 	if v == nil {
 		return graphql.Null
 	}
+	_ = sel
+	_ = ctx
 	res := graphql.MarshalTime(*v)
 	return res
 }

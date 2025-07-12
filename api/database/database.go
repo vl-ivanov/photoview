@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/url"
@@ -65,6 +66,7 @@ func GetSqliteAddress(path string) (*url.URL, error) {
 	// queryValues.Add("_busy_timeout", "60000") // 1 minute
 	queryValues.Add("_journal_mode", "WAL")    // Write-Ahead Logging (WAL) mode
 	queryValues.Add("_locking_mode", "NORMAL") // allows concurrent reads and writes
+	queryValues.Add("_foreign_keys", "ON")     // Enforc foreign key constraints.
 	address.RawQuery = queryValues.Encode()
 
 	// log.Panicf("%s", address.String())
@@ -102,11 +104,6 @@ func ConfigureDatabase(config *gorm.Config) (*gorm.DB, error) {
 	db, err := gorm.Open(databaseDialect, config)
 	if err != nil {
 		return nil, err
-	}
-
-	// Manually enable foreign keys for sqlite, as this isn't done by default
-	if drivers.SQLITE.MatchDatabase(db) {
-		db.Exec("PRAGMA foreign_keys = ON")
 	}
 
 	return db, nil
@@ -199,54 +196,25 @@ func MigrateDatabase(db *gorm.DB) error {
 		log.Printf("Failed to run exif GPS correction migration: %v\n", err)
 	}
 
+	// v2.5.0 - Remove Thumbnail Method for Downsampliing filters
+	if db.Migrator().HasColumn(&models.SiteInfo{}, "thumbnail_method") {
+		db.Migrator().DropColumn(&models.SiteInfo{}, "thumbnail_method")
+	}
+
 	return nil
 }
 
 func ClearDatabase(db *gorm.DB) error {
-	return db.Transaction(func(tx *gorm.DB) error {
-
-		dbDriver := drivers.DatabaseDriverFromEnv()
-
-		if dbDriver == drivers.MYSQL {
-			if err := tx.Exec("SET FOREIGN_KEY_CHECKS = 0;").Error; err != nil {
-				return err
-			}
-		}
-
-		if err := clearTables(tx, dbDriver); err != nil {
-			return err
-		}
-
-		if dbDriver == drivers.MYSQL {
-			if err := tx.Exec("SET FOREIGN_KEY_CHECKS = 1;").Error; err != nil {
-				return err
-			}
-		}
-
-		return nil
-	})
-}
-
-func clearTables(tx *gorm.DB, dbDriver drivers.DatabaseDriverType) error {
-	dryRun := tx.Session(&gorm.Session{DryRun: true})
+	var errs []error
 	for _, model := range database_models {
-		// get table name of model structure
-		table := dryRun.Find(model).Statement.Table
-
-		switch dbDriver {
-		case drivers.POSTGRES:
-			if err := tx.Exec(fmt.Sprintf("TRUNCATE TABLE %s CASCADE", table)).Error; err != nil {
-				return err
-			}
-		case drivers.MYSQL:
-			if err := tx.Exec(fmt.Sprintf("TRUNCATE TABLE %s", table)).Error; err != nil {
-				return err
-			}
-		case drivers.SQLITE:
-			if err := tx.Exec(fmt.Sprintf("DELETE FROM %s", table)).Error; err != nil {
-				return err
-			}
+		if err := db.Migrator().DropTable(model); err != nil {
+			errs = append(errs, err)
 		}
 	}
+
+	if err := errors.Join(errs...); err != nil {
+		return fmt.Errorf("drop tables error: %w", err)
+	}
+
 	return nil
 }

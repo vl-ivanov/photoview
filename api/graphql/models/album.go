@@ -83,26 +83,32 @@ func GetParentsFromAlbums(db *gorm.DB, filter func(*gorm.DB) *gorm.DB, albumID i
 func (a *Album) Thumbnail(db *gorm.DB) (*Media, error) {
 	var media Media
 
-	if a.CoverID == nil {
-		if err := db.Raw(`
-			WITH recursive sub_albums AS (
-				SELECT * FROM albums AS root WHERE id = ?
-				UNION ALL
-				SELECT child.* FROM albums AS child JOIN sub_albums ON child.parent_album_id = sub_albums.id
-			)
+	if a.CoverID != nil {
+		if err := db.First(&media, *a.CoverID).Error; err != nil {
+			return nil, err
+		}
+		return &media, nil
+	}
 
-			SELECT * FROM media WHERE media.album_id IN (
-				SELECT id FROM sub_albums
-			) AND media.id IN (
-				SELECT media_id FROM media_urls WHERE media_urls.media_id = media.id
-			) ORDER BY id LIMIT 1
-		`, a.ID).Find(&media).Error; err != nil {
-			return nil, err
-		}
-	} else {
-		if err := db.Where("id = ?", a.CoverID).Find(&media).Error; err != nil {
-			return nil, err
-		}
+	query := `
+		WITH RECURSIVE sub_albums AS (
+			SELECT id FROM albums WHERE id = ?
+			UNION ALL
+			SELECT children.id FROM albums AS children
+			INNER JOIN sub_albums ON children.parent_album_id = sub_albums.id
+		)
+		SELECT * FROM media
+		WHERE media.album_id IN (SELECT id FROM sub_albums)
+		ORDER BY media.id DESC
+		LIMIT 1
+	`
+
+	if err := db.Raw(query, a.ID).Scan(&media).Error; err != nil {
+		return nil, err
+	}
+
+	if media.ID == 0 {
+		return nil, nil // Return nil for empty albums
 	}
 
 	return &media, nil
