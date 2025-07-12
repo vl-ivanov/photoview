@@ -13,13 +13,8 @@ import {
   sidebarDownloadQueryVariables,
   sidebarDownloadQuery_media_downloads,
 } from './__generated__/sidebarDownloadQuery'
-
-interface MessageOptions {
-  key: string
-  type: NotificationType
-  props: any
-  onDismiss?: () => void
-}
+import { isNil } from '../../helpers/utils'
+import { Message } from '../messages/SubscriptionsHook'
 
 export const SIDEBAR_DOWNLOAD_QUERY = gql`
   query sidebarDownloadQuery($mediaId: ID!) {
@@ -37,6 +32,17 @@ export const SIDEBAR_DOWNLOAD_QUERY = gql`
     }
   }
 `
+
+const getDownloadErrorMessage = (): Message => ({
+  key: `download-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+  type: NotificationType.Close,
+  props: {
+    negative: true,
+    header: 'Downloading media failed',
+    content: `The content length of the downloaded media is 0 bytes, which has no sense and usually
+          means that there is an unknown lower-level error.`,
+  },
+})
 
 const formatBytes = (t: TranslationFn) => (bytes: number) => {
   if (bytes == 0)
@@ -62,58 +68,63 @@ const formatBytes = (t: TranslationFn) => (bytes: number) => {
   }
 }
 
-const downloadMedia = (
-  t: TranslationFn,
-  add: (message: MessageOptions) => void,
-  removeKey: (key: string) => void
-) => async (url: string) => {
-  const imgUrl = new URL(
-    `${import.meta.env.BASE_URL}${url}`.replace(/\/\//g, '/'),
-    location.origin
-  )
+const downloadMedia =
+  (
+    t: TranslationFn,
+    add: (message: Message) => void,
+    removeKey: (key: string) => void
+  ) =>
+  async (url: string) => {
+    const imgUrl = new URL(
+      `${import.meta.env.BASE_URL}${url}`.replace(/\/\//g, '/'),
+      location.origin
+    )
 
-  if (authToken() == null) {
-    // Get share token if not authorized
-    const token = location.pathname.match(/^\/share\/([\d\w]+)(\/?.*)$/)
-    if (token) {
-      imgUrl.searchParams.set('token', token[1])
+    if (authToken() == null) {
+      // Get share token if not authorized
+      const token = location.pathname.match(/^\/share\/(\w+)(\/?.*)$/)
+      if (token) {
+        imgUrl.searchParams.set('token', token[1])
+      }
     }
+
+    const response = await fetch(imgUrl.href, {
+      credentials: 'include',
+    })
+
+    let blob
+    if (response.headers.has('content-length')) {
+      blob = await downloadMediaShowProgress(t, add, removeKey)(response)
+    } else {
+      blob = await response.blob()
+    }
+
+    if (blob == null) {
+      console.log('Blob is null canceling')
+      return
+    }
+
+    const filenameMatch = url.match(/[^/]*$/)
+
+    if (filenameMatch == null) {
+      console.error('Could not extract filename', url)
+      return
+    }
+
+    const filename = filenameMatch[0]
+    downloadBlob(blob, filename)
   }
-
-  const response = await fetch(imgUrl.href, {
-    credentials: 'include',
-  })
-
-  let blob = null
-  if (response.headers.has('content-length')) {
-    blob = await downloadMediaShowProgress(t, add, removeKey)(response)
-  } else {
-    blob = await response.blob()
-  }
-
-  if (blob == null) {
-    console.log('Blob is null canceling')
-    return
-  }
-
-  const filenameMatch = url.match(/[^/]*$/)
-
-  if (filenameMatch == null) {
-    console.error('Could not extract filename', url)
-    return
-  }
-
-  const filename = filenameMatch[0]
-  downloadBlob(blob, filename)
-}
 
 const downloadMediaShowProgress =
   (
     t: TranslationFn,
-    add: (message: MessageOptions) => void,
+    add: (message: Message) => void,
     removeKey: (key: string) => void
-  ) => async (response: Response) => {
-    const notifyKey = `download-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+  ) =>
+  async (response: Response) => {
+    const notifyKey = `download-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2, 11)}`
     const totalBytes = Number(response.headers.get('content-length'))
     const reader = response.body?.getReader()
     const data = new Uint8Array(totalBytes)
@@ -130,16 +141,7 @@ const downloadMediaShowProgress =
     }
 
     if (totalBytes === 0) {
-      add({
-        key: notifyKey,
-        type: NotificationType.Close,
-        props: {
-          negative: true,
-          header: 'Downloading media failed',
-          content: `The content length of the downloaded media is 0 bytes, which has no sense and usually
-          means that there is an unknown lower-level error.`,
-        },
-      });
+      add(getDownloadErrorMessage())
       throw new Error('Content length of the downloaded media is 0.')
     }
 
@@ -154,8 +156,8 @@ const downloadMediaShowProgress =
       },
     })
 
-    const PROGRESS_THROTTLE_MS = 500;
-    let lastUpdate = 0;
+    const PROGRESS_THROTTLE_MS = 500
+    let lastUpdate = 0
     let receivedBytes = 0
     let result
     try {
@@ -166,13 +168,13 @@ const downloadMediaShowProgress =
 
         if (result.value) {
           if (receivedBytes + result.value.length > totalBytes) {
-            throw new Error('Received more data than expected');
+            throw new Error('Received more data than expected')
           }
           data.set(result.value, receivedBytes)
           receivedBytes += result.value.length
         }
 
-        const now = Date.now();
+        const now = Date.now()
         if (now - lastUpdate >= PROGRESS_THROTTLE_MS) {
           add({
             key: notifyKey,
@@ -185,8 +187,8 @@ const downloadMediaShowProgress =
                 totalBytes
               )} bytes downloaded`,
             },
-          });
-          lastUpdate = now;
+          })
+          lastUpdate = now
         }
       } while (!result.done)
     } catch (error) {
@@ -196,12 +198,11 @@ const downloadMediaShowProgress =
         props: {
           negative: true,
           header: 'Downloading media failed',
-          content: `The media download task failed with the error: ${error instanceof Error
-            ? error.message
-            : 'Unknown error occurred'
-            }`,
+          content: `The media download task failed with the error: ${
+            error instanceof Error ? error.message : 'Unknown error occurred'
+          }`,
         },
-      });
+      })
       return
     }
 
@@ -254,11 +255,15 @@ type SidebarDownloadTableRow = {
 
 type SidebarDownloadTableProps = {
   rows: SidebarDownloadTableRow[]
-  add: (message: MessageOptions) => void
+  add: (message: Message) => void
   removeKey: (key: string) => void
 }
 
-const SidebarDownloadTable = ({ rows, add, removeKey }: SidebarDownloadTableProps) => {
+const SidebarDownloadTable = ({
+  rows,
+  add,
+  removeKey,
+}: SidebarDownloadTableProps) => {
   const { t } = useTranslation()
 
   const extractExtension = (url: string) => {
@@ -302,11 +307,11 @@ const SidebarDownloadTable = ({ rows, add, removeKey }: SidebarDownloadTableProp
   )
 }
 
-type SidebarMediaDownladProps = {
+type SidebarMediaDownloadProps = {
   media: MediaSidebarMedia
 }
 
-const SidebarMediaDownload = ({ media }: SidebarMediaDownladProps) => {
+const SidebarMediaDownload = ({ media }: SidebarMediaDownloadProps) => {
   const { t } = useTranslation()
   const { add, removeKey } = useMessageState()
   if (!media || !media.id) return null
@@ -325,6 +330,17 @@ const SidebarMediaDownload = ({ media }: SidebarMediaDownladProps) => {
   } else {
     if (!media.downloads) {
       loadPhotoDownloads()
+        .then(({ data }) => {
+          if (isNil(data)) {
+            add(getDownloadErrorMessage())
+            throw new Error('Expected data not to be null')
+          }
+          downloads = data.media.downloads
+        })
+        .catch(() => {
+          downloads = []
+          add(getDownloadErrorMessage())
+        })
     } else {
       downloads = media.downloads
     }

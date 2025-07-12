@@ -1,9 +1,7 @@
 import React from 'react'
-import { render, screen } from '@testing-library/react'
-import { MockedProvider } from '@apollo/client/testing'
+import { screen } from '@testing-library/react'
 import MediaSidebar, { MediaSidebarMedia } from './MediaSidebar'
 import { MediaType } from '../../../__generated__/globalTypes'
-import { MemoryRouter } from 'react-router'
 import { renderWithProviders } from '../../../helpers/testUtils'
 
 import * as authentication from '../../../helpers/authentication'
@@ -67,7 +65,5 @@ describe('MediaSidebar', () => {
 
     expect(screen.getByText('Set as album cover photo')).toBeInTheDocument()
     expect(screen.getByText('Album path')).toBeInTheDocument()
-
-    screen.debug()
   })
 })
